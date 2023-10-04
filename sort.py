@@ -1,21 +1,16 @@
 import pandas as pd
-from openpyxl import load_workbook
 
-# TODO: improve for dynamic names and sheet names
-excel_file = 'Documents/report.xlsv'
-sheet_name = 'sheet'
+# TODO: dynamic input
+input_csv = 'C:/Users/marketing/Documents/report.csv'
+output_csv = 'C:/Users/marketing/Documents/output.csv'
 
-df = pd.read_excel(excel_file, sheet_name=sheet_name)
+# add csv to datafram
+df = pd.read_csv(input_csv, encoding='cp1252') # encoding for windows
 
-# define columns
-def custom_sort(row):
-  return (row['Order No'], row['Order Line'], row['Date Entered'])
+# define sorting columns
+df.sort_values(by=['Order No', 'Order Line', 'Date Entered'], inplace=True)
 
-# sort them
-df = df.sort_values(by=[custom_sort])
+# save to output csv
+df.to_csv(output_csv, index=False)
 
-with pd.ExcelWriter(excel_file, engine='openpyxl') as writer:
-  writer.book = load_workbook(excel_file)
-  df.to_excel(writer, sheet_name=sheet_name, index=False)
-
-print("Custom sorting is complete.")
+print(f'Sorted and saved to {output_csv}')
