@@ -1,16 +1,47 @@
+import win32com.client
+import os
 import pandas as pd
 
-# TODO: dynamic input
-input_csv = 'C:/Users/marketing/Documents/report.csv'
-output_csv = 'C:/Users/marketing/Documents/output.csv'
+# outlook object creation
+outlook = win32com.client.Dispatch("Outlook.Application").GetNamespace("MAPI")
 
-# add csv to datafram
-df = pd.read_csv(input_csv, encoding='cp1252') # encoding for windows
+# search through inbox
+folder = outlook.GetDefaultFolder(6)
 
-# define sorting columns
-df.sort_values(by=['Order No', 'Order Line', 'Date Entered'], inplace=True)
+# get latest items
+emails = folder.Items
+emails.Sort("[ReceivedTime]", True)
 
-# copy df to clipboard
-df.to_clipboard(index=False, header=True, sep='\t')
+for email in emails:
+    # define email subject to search for
+    if email.Subject == "CSV file from Report Wizard":
+        subject = email.Subject
+        print(f"Subject: {subject}")
 
-print(f'Sorted and copied.')
+        # attachment check
+        if email.Attachments.Count > 0:
+            # save to temp file
+            attachment = email.Attachments.Item(1)
+            attachment_filename = os.path.join(os.getcwd(), attachment.FileName)
+            attachment.SaveAsFile(attachment_filename)
+            print(f"Saved attachment: {attachment_filename}")
+
+            # add to dataframe with windows encoding
+            df = pd.read_csv(attachment_filename, encoding='cp1252')
+
+            # sort criteria
+            df.sort_values(by=['Order No', 'Order Line', 'Date Entered'], inplace=True)
+
+            # copy dataframe to clipboard
+            df.to_clipboard(index=False, header=True, sep='\t')
+
+            print(f'Successfully sorted and copied to the clipboard with columns.')
+
+            os.remove(attachment_filename)
+        else:
+            print("No attachments found in the email.")
+
+        break
+
+# release outlook
+del outlook
