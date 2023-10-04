@@ -33,7 +33,7 @@ for email in emails:
             # add to dataframe with windows encoding
             df = pd.read_csv(attachment_filename, encoding='cp1252')
 
-            # convert dates
+            # Convert dates and change date formats
             df['Date Entered'] = pd.to_datetime(df['Date Entered'], format='%d/%m/%y').dt.strftime('%d/%m/%Y')
             df['Date Promised'] = pd.to_datetime(df['Date Promised'], format='%d/%m/%y').dt.strftime('%d/%m/%Y')
             df['Date Despatched'] = pd.to_datetime(df['Date Despatched'], format='%d/%m/%y').dt.strftime('%d/%m/%Y')
@@ -41,33 +41,34 @@ for email in emails:
             # Sort criteria
             df.sort_values(by=['Order No', 'Order Line', 'Date Entered'], inplace=True)
 
+            # Format the 'Net Value' and 'Customer Group' columns as numbers
+            df['Net Value'] = df['Net Value'].str.replace(',', '', regex=True).astype(float)
+            df['Customer Group'] = pd.to_numeric(df['Customer Group'], errors='coerce')  # Handle non-numeric values
+
             df.to_clipboard(index=False, header=True, sep='\t', decimal=',')
 
-            print(f'Sorted.')
+            print(f'Sorted and copied.')
 
-            # Open the Excel file
             excel_file_path = 'C:\\Users\\marketing\\Documents\\2023 SALES FOLLOW UP.xlsx'
             wb = openpyxl.load_workbook(excel_file_path)
             print('File opened.')
 
-            # Specify the sheet name to overwrite the data
             sheet_name = 'Sales Order Data'
             ws = wb[sheet_name]
             print('Sheet selected.')
 
-            # Clear existing data in the sheet, excluding columns T, U, and V, starting from row 2
+            # clear existing data in the sheet, apart from columns T, U, and V
             for row_index, row in enumerate(ws.iter_rows(min_row=2, max_row=ws.max_row, min_col=1, max_col=19), 2):
                 for cell_index, cell in enumerate(row, 1):
                     if cell.column_letter not in ['T', 'U', 'V']:
                         cell.value = None
             print('Data cleared, inserting.')
-            
+
             # insert sorted data
             for row_index, row_data in enumerate(dataframe_to_rows(df, index=False, header=True), 1):
                 for column_index, value in enumerate(row_data, 1):
                     ws.cell(row=row_index, column=column_index, value=value)
 
-            # Save the updated Excel file
             wb.save(excel_file_path)
             wb.close()
 
