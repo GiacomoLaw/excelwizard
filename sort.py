@@ -12,6 +12,7 @@ def custom_sort(row):
   return (row['Order No'], row['Order Line'], row['Date Entered'])
 
 # sort them
+df = DataFrame(data)
 df = df.sort_values(by=[custom_sort])
 
 with pd.ExcelWriter(excel_file, engine='openpyxl') as writer:
